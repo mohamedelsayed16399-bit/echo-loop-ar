@@ -64,6 +64,14 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
  <p style="font-size:12px;opacity:.7">كيبورد: الأسهم/WASD للحركة، فوق للنط، Q أو Enter لصنع صدى، U للتراجع عن آخر صدى، R للإعادة</p>
 </div>
 
+<div class="ov" id="tut">
+ <h1>إزاي تلعب؟</h1>
+ <p>1) اتحرك بالأسهم واطلع للبوابة الخضرا. الأشواك والليزر بيموّتوك.</p>
+ <p>2) اضغط <b>⟳ اصنع صدى</b>: اللي عملته بيتحوّل لصدى بيعيده من الأول.</p>
+ <p>3) الصدى بيقف على الزرار ويفتح الباب، أو تطلع على راسه كسلم.</p>
+ <p>4) السيور بتشدّك: اتنطط قبل الحافة. 💎 الجواهر بتفتح ألوان جديدة.</p>
+ <button class="go" id="tutok">فهمت، يلا</button>
+</div>
 <div class="ov" id="win">
  <h1 id="wt">المرحلة خلصت!</h1>
  <div style="font-size:44px;color:#ffd166;letter-spacing:8px" id="wstars">★★★</div>
@@ -498,7 +506,8 @@ function openMenu(){playing=false;const gr=$('grid');gr.innerHTML='';
  LEVELS.slice(0,NMAIN).forEach((L,i)=>{const d=document.createElement('div');d.className='lv';const s=save[i]||0;d.innerHTML=(i+1)+'<small>'+(s?'★'.repeat(s)+'☆'.repeat(3-s):'☆☆☆')+((save['g'+i]||0)?' 💎':'')+'</small>';d.style.borderColor=i===sel?'#7df9ff':'';d.addEventListener('pointerdown',e=>{e.preventDefault();sel=i;openMenu()});gr.appendChild(d)});
  let ts=0,tg=0;for(let i=0;i<NMAIN;i++){ts+=save[i]||0;tg+=save['g'+i]||0}skinLabel();$('tot').textContent='★ '+ts+'/'+(NMAIN*3)+'   💎 '+tg;
  $('go').textContent='ابدأ المرحلة '+(sel+1)+': '+LEVELS[sel].name;$('menu').classList.add('show');$('win').classList.remove('show')}
-function start(i){sel=i;$('menu').classList.remove('show');$('win').classList.remove('show');loadLevel(i);playing=true;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume()}catch(e){}}
+function start(i){if(!save.tut&&!save.tutSkip&&i===0&&$('tut')){$('menu').classList.remove('show');$('tut').classList.add('show');$('tutok').onclick=function(){save.tut=1;persist();$('tut').classList.remove('show');start(0)};return}
+sel=i;$('menu').classList.remove('show');$('win').classList.remove('show');loadLevel(i);playing=true;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume()}catch(e){}}
 $('go').addEventListener('pointerdown',e=>{e.preventDefault();start(sel)});
 $('daily').addEventListener('pointerdown',e=>{e.preventDefault();const k=dayKey();LEVELS[NMAIN]=genLevel(k,k%3);start(NMAIN)});
 $('next').addEventListener('pointerdown',e=>{e.preventDefault();start(li+1)});
