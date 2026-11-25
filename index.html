@@ -470,7 +470,7 @@ function draw(ts){
  {const T2=T;for(const p of (LEVELS[li].plats||[])){const px=platX(p,t);cx.fillStyle='#4dd0ff';cx.shadowColor='#4dd0ff';cx.shadowBlur=12;rr(px,p.y,p.w,10,4);cx.fill();cx.shadowBlur=0;cx.fillStyle='rgba(255,255,255,.5)';cx.fillRect(px+6,p.y+2,p.w-12,2)}}
  for(const g of gems){if(g.got)continue;const gx=g.c*TS+16,gy=g.r*TS+16+3*Math.sin(T*3+g.c);cx.save();cx.translate(gx,gy);cx.rotate(T);cx.fillStyle='#ffd166';cx.shadowColor='#ffd166';cx.shadowBlur=12;cx.fillRect(-7,-7,14,14);cx.restore();cx.shadowBlur=0}
  // echoes
- echoes.forEach((ec,i)=>drawEnt(ec.e,ECOL[i],.6,true));
+ echoes.forEach((ec,i)=>{drawEnt(ec.e,ECOL[i],.6,true);cx.save();cx.font='bold 13px system-ui';cx.textAlign='center';cx.fillStyle=ECOL[i];cx.shadowColor=ECOL[i];cx.shadowBlur=6;cx.fillText(String(i+1),ec.e.x+ec.e.w/2,ec.e.y-5);cx.restore()});
  // player
  drawEnt(player,skinCol(),1,true);
  // particles
