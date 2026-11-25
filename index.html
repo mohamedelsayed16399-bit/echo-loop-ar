@@ -83,7 +83,7 @@ const LEVELS=[
 "#..................#",
 "#..................#",
 "#..................#",
-"#..................#",
+"#.......G..........#",
 "#S......XX.......E.#",
 "####################"]},
 {name:"الباب الأحمر",par:1,hint:"الباب مقفول. قف على الزرار الأحمر واضغط «اصنع صدى»، الصدى هيفضل واقف عليه.",map:[
@@ -254,6 +254,30 @@ const LEVELS=[
 "#..................#",
 "#S....XXXXXXXX.....#",
 "####################"]}
+,{name:"ليزر نابض",par:0,hint:"الليزر بيشتغل ويقف كل شوية. استنى لحظة الوقوف وعدّي بسرعة.",map:[
+"####################",
+"#.......Y..........#",
+"#.......Y..........#",
+"#.......Y..........#",
+"#.......Y..........#",
+"#.......Y..........#",
+"#.......Y..........#",
+"#.......Y..........#",
+"#.......Y..........#",
+"#S......Y.G......E.#",
+"####################"]},
+{name:"ليزرين بالتناوب",par:0,hint:"الليزرين شغالين بالتناوب. عدّي الأول وكمّل من غير ما توقف.",map:[
+"####################",
+"#......Y.....W.....#",
+"#......Y.....W.....#",
+"#......Y.....W.....#",
+"#......Y.....W.....#",
+"#......Y.....W.....#",
+"#......Y.....W.....#",
+"#......Y.....W.....#",
+"#......Y.....W.....#",
+"#S.....Y..G..W...E.#",
+"####################"]}
 ];
 const COL={a:'#ff4d6d',b:'#ffd166',c:'#06d6a0'};
 const ECOL=['#c084fc','#ff9f43','#4dd0ff'];
@@ -264,12 +288,13 @@ function persist(){try{localStorage.setItem('echo_loop_v1',JSON.stringify(save))
 // audio
 let ac=null;function snd(f,d,type,v,slide){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.type=type||'sine';o.frequency.value=f;if(slide)o.frequency.exponentialRampToValueAtTime(slide,ac.currentTime+d);g.gain.value=v||.08;g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
 // state
-let li=0,tiles,spawn,doors,plates,exitT,echoes,player,rec,t,msg='',msgT=0,won=false,flash=0,deaths=0,parts=[],shake=0,openAnim={a:0,b:0,c:0},playing=false;
+let gems=[],li=0,tiles,spawn,doors,plates,exitT,echoes,player,rec,t,msg='',msgT=0,won=false,flash=0,deaths=0,parts=[],shake=0,openAnim={a:0,b:0,c:0},playing=false;
 let keys={L:0,R:0,J:0};
-function parse(){const L=LEVELS[li];tiles=[];plates=[];doors=[];exitT=null;
+function parse(){const L=LEVELS[li];tiles=[];plates=[];gems=[];doors=[];exitT=null;
  for(let r=0;r<ROWS;r++){const row=[];for(let c=0;c<COLS;c++){const ch=L.map[r][c];
   if(ch==='S'){spawn={x:c*TS+6,y:(r+1)*TS-28};row.push('.')}
   else if(ch==='E'){exitT={c,r};row.push('.')}
+  else if(ch==='G'){gems.push({c,r,got:0});row.push('.')}
   else if('abc'.includes(ch)){plates.push({c,r,k:ch});row.push('.')}
   else if('ABC'.includes(ch)){doors.push({c,r,k:ch.toLowerCase()});row.push(ch)}
   else row.push(ch)}tiles.push(row)}}
@@ -308,6 +333,7 @@ function step(e,inp,isPlayer){
  if(t%3===0){e.trail.push({x:e.x,y:e.y});if(e.trail.length>6)e.trail.shift()}
 }
 function platX(p,tt){const ph=(tt%p.per)/p.per;return p.x0+(p.x1-p.x0)*(0.5-0.5*Math.cos(ph*6.2832))}
+function lasOn(ch,tt){return ch==='Y'?(tt%120)<70:((tt+60)%120)<70}
 function plateRect(p){return{x:p.c*TS+2,y:p.r*TS+24,w:TS-4,h:8}}
 function calcPlates(){const n={a:0,b:0,c:0};const ents=[player,...echoes.map(e=>e.e)];for(const p of plates){const pr=plateRect(p);for(const e of ents)if(overl(e,pr))n[p.k]=1}
  for(const k of 'abc'){if(n[k]&&!pressed[k]&&playing)snd(660,.12,'triangle',.06,880);if(!n[k]&&pressed[k]&&playing)snd(300,.12,'triangle',.05)}
@@ -332,6 +358,8 @@ function update(){
  const pr={x:player.x,y:player.y,w:player.w,h:player.h};
  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(tiles[r][c]==='X'&&overl(pr,{x:c*TS+6,y:r*TS+16,w:TS-12,h:TS-16})){die();return}
  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(tiles[r][c]==='Z'&&!pressed.c&&overl(pr,{x:c*TS+11,y:r*TS,w:10,h:TS})){die();return}
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const ch=tiles[r][c];if((ch==='Y'||ch==='W')&&lasOn(ch,t-1)&&overl(pr,{x:c*TS+11,y:r*TS,w:10,h:TS})){die();return}}
+ for(const g of gems)if(!g.got&&overl(pr,{x:g.c*TS+6,y:g.r*TS+6,w:20,h:20})){g.got=1;snd(880,.15,'triangle',.08,1320);burst(g.c*TS+16,g.r*TS+16,'#ffd166',14);say('💎 جوهرة!')}
  const ex={x:exitT.c*TS+4,y:exitT.r*TS-4,w:TS-8,h:TS+4};
  if(overl(pr,ex))return finish();
  if(t>=MAXT){say('انتهى الوقت: صدى تلقائي');makeEcho()}
@@ -339,10 +367,10 @@ function update(){
 }
 function finish(){won=true;snd(523,.15,'triangle',.1);setTimeout(()=>snd(659,.15,'triangle',.1),130);setTimeout(()=>snd(784,.3,'triangle',.1),260);
  const par=LEVELS[li].par,n=echoes.length;const st=n<=par?3:(n<=par+1?2:1);
- const old=save[li]||0;if(st>old)save[li]=st;const bt=save['t'+li];const nb=!bt||t<bt;if(nb)save['t'+li]=t;persist();
+ const gc=gems.filter(g=>g.got).length;if(gc>(save['g'+li]||0))save['g'+li]=gc;const old=save[li]||0;if(st>old)save[li]=st;const bt=save['t'+li];const nb=!bt||t<bt;if(nb)save['t'+li]=t;persist();
  $('wstars').textContent='★'.repeat(st)+'☆'.repeat(3-st);
  $('wt').textContent=li===LEVELS.length-1?'خلّصت اللعبة! 🎉':'المرحلة خلصت!';
- $('wsub').textContent='استخدمت '+n+' أصداء (المثالي '+par+')'+(deaths?' ومتّ '+deaths+' مرات':'')+'. وقت الجولة الأخيرة '+(t/60).toFixed(1)+' ث'+(nb?' (رقم قياسي جديد!)':' (أفضل: '+(bt/60).toFixed(1)+' ث)');
+ $('wsub').textContent='استخدمت '+n+' أصداء (المثالي '+par+')'+(deaths?' ومتّ '+deaths+' مرات':'')+'. وقت الجولة الأخيرة '+(t/60).toFixed(1)+' ث'+(gems.length?' | جواهر: '+gc+'/'+gems.length:'')+(nb?' (رقم قياسي جديد!)':' (أفضل: '+(bt/60).toFixed(1)+' ث)');
  $('next').style.display=li<LEVELS.length-1?'':'none';
  $('win').classList.add('show')}
 // render
@@ -366,6 +394,7 @@ function draw(ts){
   if(ch==='#'){cx.fillStyle='#1b1f56';cx.fillRect(x,y,TS,TS);cx.fillStyle='#2c3290';cx.fillRect(x,y,TS,3);cx.fillStyle='rgba(255,255,255,.05)';cx.fillRect(x+2,y+6,TS-4,2);cx.strokeStyle='#0b0d30';cx.strokeRect(x+.5,y+.5,TS-1,TS-1)}
   else if(ch==='X'){cx.fillStyle='#ff4d6d';cx.shadowColor='#ff4d6d';cx.shadowBlur=8;for(let k=0;k<2;k++){cx.beginPath();cx.moveTo(x+k*16+1,y+TS);cx.lineTo(x+k*16+8,y+14);cx.lineTo(x+k*16+15,y+TS);cx.fill()}cx.shadowBlur=0}
   else if(ch==='^'){cx.fillStyle='#4dd0ff';cx.shadowColor='#4dd0ff';cx.shadowBlur=10;cx.fillRect(x+4,y+24,TS-8,8);const sp=2*Math.sin(T*6);cx.fillRect(x+8,y+18+sp,TS-16,6);cx.shadowBlur=0}
+  else if(ch==='Y'||ch==='W'){const on=lasOn(ch,t),soon=!on&&((ch==='Y'?t:t+60)%120)>=108;cx.fillStyle='#552';cx.fillRect(x+10,y,12,4);if(on){cx.fillStyle='#ff2d55';cx.shadowColor='#ff2d55';cx.shadowBlur=14;cx.globalAlpha=.7+.3*Math.sin(T*40+r);cx.fillRect(x+14,y,4,TS);cx.shadowBlur=0;cx.globalAlpha=1}else{cx.fillStyle=soon?'rgba(255,200,60,.6)':'rgba(255,255,255,.12)';cx.fillRect(x+15,y,2,TS)}}
   else if(ch==='Z'){const on=!pressed.c;cx.fillStyle='#552';cx.fillRect(x+10,y,12,4);if(on){cx.globalAlpha=.7+.3*Math.sin(T*40+r);cx.fillStyle='#ff2d55';cx.shadowColor='#ff2d55';cx.shadowBlur=14;cx.fillRect(x+14,y,4,TS);cx.shadowBlur=0;cx.globalAlpha=1}else{cx.fillStyle='rgba(6,214,160,.25)';cx.fillRect(x+15,y,2,TS)}}
   else if('ABC'.includes(ch)){const k=ch.toLowerCase(),o=pressed[k];const col=COL[k];
    if(o){cx.strokeStyle=col;cx.globalAlpha=.5;cx.setLineDash([4,4]);cx.strokeRect(x+4,y,TS-8,TS);cx.setLineDash([]);cx.globalAlpha=1}
@@ -375,6 +404,7 @@ function draw(ts){
  // exit
  {const x=exitT.c*TS,y=exitT.r*TS;const pu=1+.1*Math.sin(T*4);cx.save();cx.translate(x+16,y+16);cx.shadowColor='#4cff9a';cx.shadowBlur=22;cx.strokeStyle='#4cff9a';cx.lineWidth=3;cx.beginPath();cx.ellipse(0,0,12*pu,18*pu,0,0,6.28);cx.stroke();cx.rotate(T*2);cx.strokeStyle='rgba(76,255,154,.5)';cx.beginPath();cx.ellipse(0,0,8,14,0,0,6.28);cx.stroke();cx.restore();cx.shadowBlur=0}
  {const T2=T;for(const p of (LEVELS[li].plats||[])){const px=platX(p,t);cx.fillStyle='#4dd0ff';cx.shadowColor='#4dd0ff';cx.shadowBlur=12;rr(px,p.y,p.w,10,4);cx.fill();cx.shadowBlur=0;cx.fillStyle='rgba(255,255,255,.5)';cx.fillRect(px+6,p.y+2,p.w-12,2)}}
+ for(const g of gems){if(g.got)continue;const gx=g.c*TS+16,gy=g.r*TS+16+3*Math.sin(T*3+g.c);cx.save();cx.translate(gx,gy);cx.rotate(T);cx.fillStyle='#ffd166';cx.shadowColor='#ffd166';cx.shadowBlur=12;cx.fillRect(-7,-7,14,14);cx.restore();cx.shadowBlur=0}
  // echoes
  echoes.forEach((ec,i)=>drawEnt(ec.e,ECOL[i],.6,true));
  // player
@@ -427,7 +457,7 @@ musLabel();
 // first level: unlocked all; pick first unfinished
 sel=0;for(let i=0;i<LEVELS.length;i++){if(!save[i]){sel=i;break}if(i===LEVELS.length-1)sel=i}
 loadLevel(0);openMenu();requestAnimationFrame(frame);
-window.__echo={tick(n,m){for(let i=0;i<n;i++){setKey('L',m.includes('L'));setKey('R',m.includes('R'));setKey('J',m.includes('J'));update()}setKey('L',0);setKey('R',0);setKey('J',0)},start,get state(){return{li,t,echoes:echoes.length,won,px:player.x,py:player.y,pressed,deaths}},keys,setKey,makeEcho};
+window.__echo={tick(n,m){for(let i=0;i<n;i++){setKey('L',m.includes('L'));setKey('R',m.includes('R'));setKey('J',m.includes('J'));update()}setKey('L',0);setKey('R',0);setKey('J',0)},start,get state(){return{gems:gems.filter(g=>g.got).length,li,t,echoes:echoes.length,won,px:player.x,py:player.y,pressed,deaths}},keys,setKey,makeEcho};
 })();
 </script>
 </body>
