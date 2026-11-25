@@ -16,7 +16,7 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
 .grp{display:flex;gap:10px;align-items:center}
 .btn{min-width:74px;height:74px;border-radius:20px;border:2px solid #4b55c9;background:rgba(75,85,201,.22);color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 0 14px rgba(90,100,255,.25) inset}
 .btn.on{background:rgba(125,249,255,.35);border-color:#7df9ff}
-.btn.small{min-width:60px;height:52px;font-size:16px;border-radius:14px}
+.btn.small{min-width:56px;padding:0 6px;height:52px;font-size:16px;border-radius:14px}
 #loopb{border-color:#c084fc;background:rgba(192,132,252,.2);font-size:17px;min-width:96px}
 .col{display:flex;flex-direction:column;gap:8px;align-items:center}
 @media (orientation:landscape) and (max-height:520px){
@@ -46,7 +46,7 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
  <canvas id="cv" width="640" height="352"></canvas>
  <div id="bar">
   <div class="grp"><div class="btn" id="bl">◀</div><div class="btn" id="br">▶</div></div>
-  <div class="col"><div style="display:flex;gap:8px"><div class="btn small" id="menub">☰ مراحل</div><div class="btn small" id="resb">↺ إعادة</div></div>
+  <div class="col"><div style="display:flex;gap:8px"><div class="btn small" id="menub">☰ مراحل</div><div class="btn small" id="undob">↶ تراجع</div><div class="btn small" id="resb">↺ إعادة</div></div>
   <div class="grp"><div class="btn" id="loopb">⟳ اصنع صدى</div><div class="btn" id="bj">▲</div></div></div>
  </div>
 </div>
@@ -57,7 +57,7 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
  <p>اوصل للبوابة الخضرا. الأشواك بتموّتك. أقصى 3 أصداء.</p>
  <div id="grid"></div>
  <button class="go" id="go">ابدأ</button>
- <p style="font-size:12px;opacity:.7">كيبورد: الأسهم/WASD للحركة، فوق للنط، Q أو Enter لصنع صدى، R للإعادة</p>
+ <p style="font-size:12px;opacity:.7">كيبورد: الأسهم/WASD للحركة، فوق للنط، Q أو Enter لصنع صدى، U للتراجع عن آخر صدى، R للإعادة</p>
 </div>
 
 <div class="ov" id="win">
@@ -299,10 +299,10 @@ function update(){
 }
 function finish(){won=true;snd(523,.15,'triangle',.1);setTimeout(()=>snd(659,.15,'triangle',.1),130);setTimeout(()=>snd(784,.3,'triangle',.1),260);
  const par=LEVELS[li].par,n=echoes.length;const st=n<=par?3:(n<=par+1?2:1);
- const old=save[li]||0;if(st>old)save[li]=st;persist();
+ const old=save[li]||0;if(st>old)save[li]=st;const bt=save['t'+li];const nb=!bt||t<bt;if(nb)save['t'+li]=t;persist();
  $('wstars').textContent='★'.repeat(st)+'☆'.repeat(3-st);
  $('wt').textContent=li===LEVELS.length-1?'خلّصت اللعبة! 🎉':'المرحلة خلصت!';
- $('wsub').textContent='استخدمت '+n+' أصداء (المثالي '+par+')'+(deaths?' ومتّ '+deaths+' مرات':'');
+ $('wsub').textContent='استخدمت '+n+' أصداء (المثالي '+par+')'+(deaths?' ومتّ '+deaths+' مرات':'')+'. وقت الجولة الأخيرة '+(t/60).toFixed(1)+' ث'+(nb?' (رقم قياسي جديد!)':' (أفضل: '+(bt/60).toFixed(1)+' ث)');
  $('next').style.display=li<LEVELS.length-1?'':'none';
  $('win').classList.add('show')}
 // render
@@ -357,10 +357,12 @@ function setKey(k,v){keys[k]=v?1:0;const m={L:'bl',R:'br',J:'bj'}[k];$(m).classL
  const up=e=>{e.preventDefault();setKey(k,0)};el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('lostpointercapture',up)});
 $('loopb').addEventListener('pointerdown',e=>{e.preventDefault();if(playing)makeEcho()});
 function reset(){echoes=[];resetRun();deaths=0;updHud();say('إعادة المرحلة')}
+$('undob').addEventListener('pointerdown',e=>{e.preventDefault();if(playing)undo()});
+function undo(){if(!echoes.length){say('مفيش صدى تتراجع عنه');return}echoes.pop();resetRun();updHud();say('اتشال آخر صدى');snd(250,.2,'sine',.06,120)}
 $('resb').addEventListener('pointerdown',e=>{e.preventDefault();if(playing)reset()});
 $('menub').addEventListener('pointerdown',e=>{e.preventDefault();openMenu()});
 const kmap={ArrowLeft:'L',a:'L',A:'L',ArrowRight:'R',d:'R',D:'R',ArrowUp:'J',w:'J',W:'J',' ':'J'};
-addEventListener('keydown',e=>{if(kmap[e.key]){setKey(kmap[e.key],1);e.preventDefault()}else if((e.key==='q'||e.key==='Q'||e.key==='Enter')&&playing){makeEcho()}else if((e.key==='r'||e.key==='R')&&playing)reset()});
+addEventListener('keydown',e=>{if(kmap[e.key]){setKey(kmap[e.key],1);e.preventDefault()}else if((e.key==='q'||e.key==='Q'||e.key==='Enter')&&playing){makeEcho()}else if((e.key==='r'||e.key==='R')&&playing)reset();else if((e.key==='u'||e.key==='U')&&playing)undo()});
 addEventListener('keyup',e=>{if(kmap[e.key])setKey(kmap[e.key],0)});
 addEventListener('blur',()=>{setKey('L',0);setKey('R',0);setKey('J',0)});
 // menu
