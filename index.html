@@ -28,7 +28,7 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
  #bar .col{order:3;flex:1}
  .btn{min-width:64px;height:64px}
 }
-.ov{position:fixed;inset:0;background:rgba(5,6,20,.94);display:none;flex-direction:column;align-items:center;justify-content:center;padding:18px;text-align:center;gap:10px;z-index:5;overflow:auto}
+.ov{position:fixed;inset:0;background:rgba(5,6,20,.94);display:none;flex-direction:column;align-items:center;justify-content:safe center;padding:18px;text-align:center;gap:10px;z-index:5;overflow:auto}
 .ov.show{display:flex}
 .ov h1{margin:0;font-size:34px;color:#7df9ff;text-shadow:0 0 20px #7df9ff88}
 .ov p{margin:2px 0;color:#c7cdf5;max-width:520px;line-height:1.6;font-size:15px}
@@ -55,6 +55,7 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
  <h1>صدى الزمن</h1>
  <p>كل مرة تضغط «اصنع صدى» حركتك اللي عملتها بتتحوّل لـ<b>صدى</b> بيعيدها من أول وجديد، وانت بتبدأ من الأول ومعاك صداك. الأصداء بتدوس على الأزرار وتفتح الأبواب، وتقدر تطلع على راسها كسلم.</p>
  <p>اوصل للبوابة الخضرا. الأشواك بتموّتك. أقصى 3 أصداء.</p>
+ <div id="tot" style="color:#ffd166;font-size:16px;font-weight:700"></div>
  <div id="grid"></div>
  <button class="go" id="go">ابدأ</button>
  <button class="go" id="mus" style="border-color:#4b55c9;font-size:15px;padding:10px 24px">🎵 الموسيقى: مقفولة</button>
@@ -439,7 +440,8 @@ addEventListener('blur',()=>{setKey('L',0);setKey('R',0);setKey('J',0)});
 // menu
 let sel=0;
 function openMenu(){playing=false;const gr=$('grid');gr.innerHTML='';
- LEVELS.forEach((L,i)=>{const d=document.createElement('div');d.className='lv';const s=save[i]||0;d.innerHTML=(i+1)+'<small>'+(s?'★'.repeat(s)+'☆'.repeat(3-s):'☆☆☆')+'</small>';d.style.borderColor=i===sel?'#7df9ff':'';d.addEventListener('pointerdown',e=>{e.preventDefault();sel=i;openMenu()});gr.appendChild(d)});
+ LEVELS.forEach((L,i)=>{const d=document.createElement('div');d.className='lv';const s=save[i]||0;d.innerHTML=(i+1)+'<small>'+(s?'★'.repeat(s)+'☆'.repeat(3-s):'☆☆☆')+((save['g'+i]||0)?' 💎':'')+'</small>';d.style.borderColor=i===sel?'#7df9ff':'';d.addEventListener('pointerdown',e=>{e.preventDefault();sel=i;openMenu()});gr.appendChild(d)});
+ let ts=0,tg=0;LEVELS.forEach((L,i)=>{ts+=save[i]||0;tg+=save['g'+i]||0});$('tot').textContent='★ '+ts+'/'+(LEVELS.length*3)+'   💎 '+tg;
  $('go').textContent='ابدأ المرحلة '+(sel+1)+': '+LEVELS[sel].name;$('menu').classList.add('show');$('win').classList.remove('show')}
 function start(i){sel=i;$('menu').classList.remove('show');$('win').classList.remove('show');loadLevel(i);playing=true;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume()}catch(e){}}
 $('go').addEventListener('pointerdown',e=>{e.preventDefault();start(sel)});
@@ -457,7 +459,7 @@ musLabel();
 // first level: unlocked all; pick first unfinished
 sel=0;for(let i=0;i<LEVELS.length;i++){if(!save[i]){sel=i;break}if(i===LEVELS.length-1)sel=i}
 loadLevel(0);openMenu();requestAnimationFrame(frame);
-window.__echo={tick(n,m){for(let i=0;i<n;i++){setKey('L',m.includes('L'));setKey('R',m.includes('R'));setKey('J',m.includes('J'));update()}setKey('L',0);setKey('R',0);setKey('J',0)},start,get state(){return{gems:gems.filter(g=>g.got).length,li,t,echoes:echoes.length,won,px:player.x,py:player.y,pressed,deaths}},keys,setKey,makeEcho};
+window.__echo={hold(){playing=false},tick(n,m){for(let i=0;i<n;i++){setKey('L',m.includes('L'));setKey('R',m.includes('R'));setKey('J',m.includes('J'));update()}setKey('L',0);setKey('R',0);setKey('J',0)},start,get state(){return{gems:gems.filter(g=>g.got).length,li,t,echoes:echoes.length,won,px:player.x,py:player.y,pressed,deaths}},keys,setKey,makeEcho};
 })();
 </script>
 </body>
