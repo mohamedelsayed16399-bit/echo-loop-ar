@@ -58,6 +58,7 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
  <div id="tot" style="color:#ffd166;font-size:16px;font-weight:700"></div>
  <div id="grid"></div>
  <button class="go" id="go">ابدأ</button>
+ <button class="go" id="daily" style="border-color:#ffd166;font-size:16px;padding:10px 24px">🎯 تحدي اليوم</button>
  <button class="go" id="mus" style="border-color:#4b55c9;font-size:15px;padding:10px 24px">🎵 الموسيقى: مقفولة</button>
  <p style="font-size:12px;opacity:.7">كيبورد: الأسهم/WASD للحركة، فوق للنط، Q أو Enter لصنع صدى، U للتراجع عن آخر صدى، R للإعادة</p>
 </div>
@@ -292,6 +293,20 @@ const LEVELS=[
 "#ScZ..XXXXXXXX.a.AE#",
 "####################"]}
 ];
+
+// daily challenge
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function genLevel(seed,fam){
+ const R=mulberry(seed),ri=(a,b)=>a+Math.floor(R()*(b-a+1));
+ const g=[];for(let r=0;r<ROWS;r++){const row=[];for(let c=0;c<COLS;c++)row.push((r===0||r===ROWS-1||c===0||c===COLS-1)?'#':'.');g.push(row)}
+ g[9][1]='S';let name,hint,par=1;
+ if(fam===0){const d=ri(8,14),p=ri(3,d-3);for(let r=1;r<=4;r++)g[r][d]='#';for(let r=5;r<=9;r++)g[r][d]='A';g[9][p]='a';if(d+4<=16&&R()<.7){g[9][d+2]='X';g[9][d+3]='X'}g[9][17]='E';name='باب اليوم';hint='تحدي اليوم: صدى يفتح الباب.'}
+ else if(fam===1){const L=ri(8,14),p=ri(3,L-3);for(let r=1;r<=9;r++)g[r][L]='Z';g[9][p]='c';if(L+4<=16&&R()<.6){g[9][L+2]='X';g[9][L+3]='X'}g[9][17]='E';name='ليزر اليوم';hint='تحدي اليوم: صدى يطفّي الليزر.'}
+ else{const sc=ri(13,15);for(let c=sc;c<=18;c++)g[7][c]='#';g[6][17]='E';name='سلم اليوم';hint='تحدي اليوم: صدى يبقى سلمك للحافة.'}
+ return{name:name+' 🎯',par,hint,daily:1,fam,map:g.map(r=>r.join(''))}
+}
+function dayKey(){const d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate()}
+const NMAIN=LEVELS.length;
 const COL={a:'#ff4d6d',b:'#ffd166',c:'#06d6a0'};
 const ECOL=['#c084fc','#ff9f43','#4dd0ff'];
 const cv=document.getElementById('cv'),cx=cv.getContext('2d');
@@ -313,7 +328,7 @@ function parse(){const L=LEVELS[li];tiles=[];plates=[];gems=[];doors=[];exitT=nu
   else row.push(ch)}tiles.push(row)}}
 function mk(){return{x:spawn.x,y:spawn.y,w:20,h:28,vx:0,vy:0,g:false,co:0,pj:0,face:1,trail:[]}}
 function resetRun(){player=mk();echoes.forEach(e=>{e.e=mk()});rec=[];t=0}
-function loadLevel(i){li=i;parse();echoes=[];resetRun();won=false;deaths=0;parts=[];$('lvn').textContent=(li+1);$('hint').textContent=LEVELS[li].hint;updHud()}
+function loadLevel(i){li=i;parse();echoes=[];resetRun();won=false;deaths=0;parts=[];$('lvn').textContent=LEVELS[li].daily?'اليوم':(li+1);$('hint').textContent=LEVELS[li].hint;updHud()}
 function updHud(){$('ecn').textContent=echoes.length+'/'+MAXE;$('tm').textContent=Math.max(0,Math.ceil((MAXT-t)/60))}
 function say(s){msg=s;msgT=120}
 // physics
@@ -380,11 +395,11 @@ function update(){
 }
 function finish(){won=true;snd(523,.15,'triangle',.1);setTimeout(()=>snd(659,.15,'triangle',.1),130);setTimeout(()=>snd(784,.3,'triangle',.1),260);
  const par=LEVELS[li].par,n=echoes.length;const st=n<=par?3:(n<=par+1?2:1);
- const gc=gems.filter(g=>g.got).length;if(gc>(save['g'+li]||0))save['g'+li]=gc;const old=save[li]||0;if(st>old)save[li]=st;const bt=save['t'+li];const nb=!bt||t<bt;if(nb)save['t'+li]=t;persist();
+ const gc=gems.filter(g=>g.got).length;if(gc>(save['g'+li]||0))save['g'+li]=gc;const old=save[li]||0;if(st>old)save[li]=st;if(LEVELS[li].daily){const dk='d'+dayKey();if(st>(save[dk]||0))save[dk]=st}const bt=save['t'+li];const nb=!bt||t<bt;if(nb)save['t'+li]=t;persist();
  $('wstars').textContent='★'.repeat(st)+'☆'.repeat(3-st);
- $('wt').textContent=li===LEVELS.length-1?'خلّصت اللعبة! 🎉':'المرحلة خلصت!';
+ $('wt').textContent=li===NMAIN-1?'خلّصت اللعبة! 🎉':'المرحلة خلصت!';
  $('wsub').textContent='استخدمت '+n+' أصداء (المثالي '+par+')'+(deaths?' ومتّ '+deaths+' مرات':'')+'. وقت الجولة الأخيرة '+(t/60).toFixed(1)+' ث'+(gems.length?' | جواهر: '+gc+'/'+gems.length:'')+(nb?' (رقم قياسي جديد!)':' (أفضل: '+(bt/60).toFixed(1)+' ث)');
- $('next').style.display=li<LEVELS.length-1?'':'none';
+ $('next').style.display=li<NMAIN-1?'':'none';
  $('win').classList.add('show')}
 // render
 const stars=[];for(let i=0;i<60;i++)stars.push({x:Math.random()*W,y:Math.random()*H,s:Math.random()*1.6+.3,p:Math.random()*6});
@@ -452,11 +467,12 @@ addEventListener('blur',()=>{setKey('L',0);setKey('R',0);setKey('J',0)});
 // menu
 let sel=0;
 function openMenu(){playing=false;const gr=$('grid');gr.innerHTML='';
- LEVELS.forEach((L,i)=>{const d=document.createElement('div');d.className='lv';const s=save[i]||0;d.innerHTML=(i+1)+'<small>'+(s?'★'.repeat(s)+'☆'.repeat(3-s):'☆☆☆')+((save['g'+i]||0)?' 💎':'')+'</small>';d.style.borderColor=i===sel?'#7df9ff':'';d.addEventListener('pointerdown',e=>{e.preventDefault();sel=i;openMenu()});gr.appendChild(d)});
- let ts=0,tg=0;LEVELS.forEach((L,i)=>{ts+=save[i]||0;tg+=save['g'+i]||0});$('tot').textContent='★ '+ts+'/'+(LEVELS.length*3)+'   💎 '+tg;
+ LEVELS.slice(0,NMAIN).forEach((L,i)=>{const d=document.createElement('div');d.className='lv';const s=save[i]||0;d.innerHTML=(i+1)+'<small>'+(s?'★'.repeat(s)+'☆'.repeat(3-s):'☆☆☆')+((save['g'+i]||0)?' 💎':'')+'</small>';d.style.borderColor=i===sel?'#7df9ff':'';d.addEventListener('pointerdown',e=>{e.preventDefault();sel=i;openMenu()});gr.appendChild(d)});
+ let ts=0,tg=0;for(let i=0;i<NMAIN;i++){ts+=save[i]||0;tg+=save['g'+i]||0}$('tot').textContent='★ '+ts+'/'+(NMAIN*3)+'   💎 '+tg;
  $('go').textContent='ابدأ المرحلة '+(sel+1)+': '+LEVELS[sel].name;$('menu').classList.add('show');$('win').classList.remove('show')}
 function start(i){sel=i;$('menu').classList.remove('show');$('win').classList.remove('show');loadLevel(i);playing=true;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume()}catch(e){}}
 $('go').addEventListener('pointerdown',e=>{e.preventDefault();start(sel)});
+$('daily').addEventListener('pointerdown',e=>{e.preventDefault();const k=dayKey();LEVELS[NMAIN]=genLevel(k,k%3);start(NMAIN)});
 $('next').addEventListener('pointerdown',e=>{e.preventDefault();start(li+1)});
 $('again').addEventListener('pointerdown',e=>{e.preventDefault();start(li)});
 
@@ -471,7 +487,7 @@ musLabel();
 // first level: unlocked all; pick first unfinished
 sel=0;for(let i=0;i<LEVELS.length;i++){if(!save[i]){sel=i;break}if(i===LEVELS.length-1)sel=i}
 loadLevel(0);openMenu();requestAnimationFrame(frame);
-window.__echo={hold(){playing=false},tick(n,m){for(let i=0;i<n;i++){setKey('L',m.includes('L'));setKey('R',m.includes('R'));setKey('J',m.includes('J'));update()}setKey('L',0);setKey('R',0);setKey('J',0)},start,get state(){return{gems:gems.filter(g=>g.got).length,li,t,echoes:echoes.length,won,px:player.x,py:player.y,pressed,deaths}},keys,setKey,makeEcho};
+window.__echo={hold(){playing=false},tick(n,m){for(let i=0;i<n;i++){setKey('L',m.includes('L'));setKey('R',m.includes('R'));setKey('J',m.includes('J'));update()}setKey('L',0);setKey('R',0);setKey('J',0)},daily(lv){LEVELS[NMAIN]=lv;start(NMAIN);playing=false},start,genLevel,NMAIN,get state(){return{gems:gems.filter(g=>g.got).length,li,t,echoes:echoes.length,won,px:player.x,py:player.y,pressed,deaths}},keys,setKey,makeEcho};
 })();
 </script>
 </body>
