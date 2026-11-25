@@ -59,6 +59,7 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
  <div id="grid"></div>
  <button class="go" id="go">ابدأ</button>
  <button class="go" id="daily" style="border-color:#ffd166;font-size:16px;padding:10px 24px">🎯 تحدي اليوم</button>
+ <button class="go" id="skin" style="border-color:#ffd166;font-size:15px;padding:10px 24px"></button>
  <button class="go" id="mus" style="border-color:#4b55c9;font-size:15px;padding:10px 24px">🎵 الموسيقى: مقفولة</button>
  <p style="font-size:12px;opacity:.7">كيبورد: الأسهم/WASD للحركة، فوق للنط، Q أو Enter لصنع صدى، U للتراجع عن آخر صدى، R للإعادة</p>
 </div>
@@ -463,7 +464,7 @@ function draw(ts){
  // echoes
  echoes.forEach((ec,i)=>drawEnt(ec.e,ECOL[i],.6,true));
  // player
- drawEnt(player,'#7df9ff',1,true);
+ drawEnt(player,skinCol(),1,true);
  // particles
  parts=parts.filter(p=>p.l>0);for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vy+=.1;p.l--;cx.globalAlpha=p.l/50;cx.fillStyle=p.c;cx.fillRect(p.x,p.y,3,3)}cx.globalAlpha=1;
  // timer bar
@@ -495,7 +496,7 @@ addEventListener('blur',()=>{setKey('L',0);setKey('R',0);setKey('J',0)});
 let sel=0;
 function openMenu(){playing=false;const gr=$('grid');gr.innerHTML='';
  LEVELS.slice(0,NMAIN).forEach((L,i)=>{const d=document.createElement('div');d.className='lv';const s=save[i]||0;d.innerHTML=(i+1)+'<small>'+(s?'★'.repeat(s)+'☆'.repeat(3-s):'☆☆☆')+((save['g'+i]||0)?' 💎':'')+'</small>';d.style.borderColor=i===sel?'#7df9ff':'';d.addEventListener('pointerdown',e=>{e.preventDefault();sel=i;openMenu()});gr.appendChild(d)});
- let ts=0,tg=0;for(let i=0;i<NMAIN;i++){ts+=save[i]||0;tg+=save['g'+i]||0}$('tot').textContent='★ '+ts+'/'+(NMAIN*3)+'   💎 '+tg;
+ let ts=0,tg=0;for(let i=0;i<NMAIN;i++){ts+=save[i]||0;tg+=save['g'+i]||0}skinLabel();$('tot').textContent='★ '+ts+'/'+(NMAIN*3)+'   💎 '+tg;
  $('go').textContent='ابدأ المرحلة '+(sel+1)+': '+LEVELS[sel].name;$('menu').classList.add('show');$('win').classList.remove('show')}
 function start(i){sel=i;$('menu').classList.remove('show');$('win').classList.remove('show');loadLevel(i);playing=true;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume()}catch(e){}}
 $('go').addEventListener('pointerdown',e=>{e.preventDefault();start(sel)});
@@ -523,6 +524,12 @@ let musicOn=!!save.music,mi=0;
 const SEQ=[0,3,5,7,10,7,5,3,0,5,7,12,10,7,5,3],BASE=196;
 function musicTick(){if(!musicOn||!playing||!ac)return;const n=SEQ[mi%SEQ.length];mi++;const f=BASE*Math.pow(2,n/12);try{const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.025;g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.4);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+.4);if(mi%4===1){const o2=ac.createOscillator(),g2=ac.createGain();o2.type='sine';o2.frequency.value=f/2;g2.gain.value=.03;g2.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.9);o2.connect(g2);g2.connect(ac.destination);o2.start();o2.stop(ac.currentTime+.9)}}catch(e){}}
 setInterval(musicTick,260);
+const SKINS=[['سماوي','#7df9ff',0],['دهبي','#ffd166',3],['وردي','#ff7eb6',6],['أخضر نيون','#7dff9a',10]];
+function totGems(){let g=0;for(let i=0;i<NMAIN;i++)g+=save['g'+i]||0;return g}
+function skinIdx(){const k=save.skin|0;return(SKINS[k]&&totGems()>=SKINS[k][2])?k:0}
+function skinCol(){return SKINS[skinIdx()][1]}
+function skinLabel(){const k=skinIdx(),n=(k+1)%SKINS.length,g=totGems();$('skin').textContent='🎨 اللون: '+SKINS[k][0]+(g>=SKINS[n][2]?'  (التالي: '+SKINS[n][0]+')':'  (التالي '+SKINS[n][0]+' بـ '+SKINS[n][2]+' 💎)')}
+$('skin').addEventListener('pointerdown',e=>{e.preventDefault();const k=skinIdx();let n=(k+1)%SKINS.length;if(totGems()>=SKINS[n][2]){save.skin=n;persist()}else if(k>0&&n>k){save.skin=0;persist()}else say('محتاج '+SKINS[n][2]+' 💎 عشان '+SKINS[n][0]+' (معاك '+totGems()+')');skinLabel()});
 function musLabel(){$('mus').textContent='🎵 الموسيقى: '+(musicOn?'شغالة':'مقفولة')}
 $('mus').addEventListener('pointerdown',e=>{e.preventDefault();musicOn=!musicOn;save.music=musicOn;persist();musLabel();try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume()}catch(er){}});
 musLabel();
