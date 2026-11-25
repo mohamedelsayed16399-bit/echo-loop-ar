@@ -57,6 +57,7 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
  <p>اوصل للبوابة الخضرا. الأشواك بتموّتك. أقصى 3 أصداء.</p>
  <div id="grid"></div>
  <button class="go" id="go">ابدأ</button>
+ <button class="go" id="mus" style="border-color:#4b55c9;font-size:15px;padding:10px 24px">🎵 الموسيقى: مقفولة</button>
  <p style="font-size:12px;opacity:.7">كيبورد: الأسهم/WASD للحركة، فوق للنط، Q أو Enter لصنع صدى، U للتراجع عن آخر صدى، R للإعادة</p>
 </div>
 
@@ -229,6 +230,30 @@ const LEVELS=[
 "#..................#",
 "#S....XXXXXXXX...E.#",
 "####################"]}
+,{name:"منصة وباب",par:1,plats:[{x0:160,x1:384,y:288,w:64,per:240}],hint:"المنصة بتوصلك للباب الأحمر، بس الباب محتاج صدى واقف على الزرار.",map:[
+"####################",
+"#...............#..#",
+"#...............#..#",
+"#...............#..#",
+"#...............#..#",
+"#...............A..#",
+"#...............A..#",
+"#...............A..#",
+"#...............A..#",
+"#S.a..XXXXXXXX..AE.#",
+"####################"]},
+{name:"منصة وسلم",par:1,plats:[{x0:160,x1:384,y:288,w:64,per:240}],hint:"الصدى لازم يركب المنصة ويستنى بعدها. اطلع على راسه للحافة.",map:[
+"####################",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#.................E#",
+"#.................##",
+"#..................#",
+"#S....XXXXXXXX.....#",
+"####################"]}
 ];
 const COL={a:'#ff4d6d',b:'#ffd166',c:'#06d6a0'};
 const ECOL=['#c084fc','#ff9f43','#4dd0ff'];
@@ -390,6 +415,15 @@ function start(i){sel=i;$('menu').classList.remove('show');$('win').classList.re
 $('go').addEventListener('pointerdown',e=>{e.preventDefault();start(sel)});
 $('next').addEventListener('pointerdown',e=>{e.preventDefault();start(li+1)});
 $('again').addEventListener('pointerdown',e=>{e.preventDefault();start(li)});
+
+// music
+let musicOn=!!save.music,mi=0;
+const SEQ=[0,3,5,7,10,7,5,3,0,5,7,12,10,7,5,3],BASE=196;
+function musicTick(){if(!musicOn||!playing||!ac)return;const n=SEQ[mi%SEQ.length];mi++;const f=BASE*Math.pow(2,n/12);try{const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.025;g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.4);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+.4);if(mi%4===1){const o2=ac.createOscillator(),g2=ac.createGain();o2.type='sine';o2.frequency.value=f/2;g2.gain.value=.03;g2.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.9);o2.connect(g2);g2.connect(ac.destination);o2.start();o2.stop(ac.currentTime+.9)}}catch(e){}}
+setInterval(musicTick,260);
+function musLabel(){$('mus').textContent='🎵 الموسيقى: '+(musicOn?'شغالة':'مقفولة')}
+$('mus').addEventListener('pointerdown',e=>{e.preventDefault();musicOn=!musicOn;save.music=musicOn;persist();musLabel();try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume()}catch(er){}});
+musLabel();
 // first level: unlocked all; pick first unfinished
 sel=0;for(let i=0;i<LEVELS.length;i++){if(!save[i]){sel=i;break}if(i===LEVELS.length-1)sel=i}
 loadLevel(0);openMenu();requestAnimationFrame(frame);
