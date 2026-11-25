@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>صدى الزمن | لغز الحلقة الزمنية</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:none}
+html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100%;align-items:center;justify-content:flex-start;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+#hud{width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;padding:6px 12px;font-size:14px;gap:8px}
+#hud b{color:#7df9ff}
+#hint{width:100%;max-width:900px;text-align:center;font-size:13px;color:#b7c0ff;min-height:20px;padding:0 10px}
+#cv{width:100%;max-width:900px;aspect-ratio:640/352;background:#0b0d24;border-top:1px solid #2a2f6b;border-bottom:1px solid #2a2f6b;image-rendering:auto}
+#bar{direction:ltr;width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;gap:10px;flex:1}
+.grp{display:flex;gap:10px;align-items:center}
+.btn{min-width:74px;height:74px;border-radius:20px;border:2px solid #4b55c9;background:rgba(75,85,201,.22);color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 0 14px rgba(90,100,255,.25) inset}
+.btn.on{background:rgba(125,249,255,.35);border-color:#7df9ff}
+.btn.small{min-width:60px;height:52px;font-size:16px;border-radius:14px}
+#loopb{border-color:#c084fc;background:rgba(192,132,252,.2);font-size:17px;min-width:96px}
+.col{display:flex;flex-direction:column;gap:8px;align-items:center}
+@media (orientation:landscape) and (max-height:520px){
+ #app{flex-direction:row;flex-wrap:wrap;align-content:flex-start}
+ #hud,#hint{order:0;flex:1 1 100%;max-width:none;padding-top:2px;padding-bottom:2px}
+ #bar{display:contents}
+ #cv{order:2;width:auto;flex:0 1 auto;height:calc(100% - 52px);max-width:62vw}
+ #bar .grp:first-child{order:1;flex:1;justify-content:center}
+ #bar .col{order:3;flex:1}
+ .btn{min-width:64px;height:64px}
+}
+.ov{position:fixed;inset:0;background:rgba(5,6,20,.94);display:none;flex-direction:column;align-items:center;justify-content:center;padding:18px;text-align:center;gap:10px;z-index:5;overflow:auto}
+.ov.show{display:flex}
+.ov h1{margin:0;font-size:34px;color:#7df9ff;text-shadow:0 0 20px #7df9ff88}
+.ov p{margin:2px 0;color:#c7cdf5;max-width:520px;line-height:1.6;font-size:15px}
+#grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0;max-width:380px;width:100%}
+.lv{border:2px solid #4b55c9;border-radius:14px;padding:10px 4px;background:rgba(75,85,201,.18);font-size:20px;font-weight:700}
+.lv small{display:block;font-size:13px;color:#ffd166;margin-top:2px;letter-spacing:2px}
+.lv.lock{opacity:.35}
+.go{margin-top:6px;padding:14px 34px;border-radius:16px;border:2px solid #7df9ff;background:rgba(125,249,255,.18);color:#fff;font-size:20px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="app">
+ <div id="hud"><span>المرحلة <b id="lvn">1</b></span><span>الأصداء <b id="ecn">0/3</b></span><span>الوقت <b id="tm">20</b></span></div>
+ <div id="hint"></div>
+ <canvas id="cv" width="640" height="352"></canvas>
+ <div id="bar">
+  <div class="grp"><div class="btn" id="bl">◀</div><div class="btn" id="br">▶</div></div>
+  <div class="col"><div style="display:flex;gap:8px"><div class="btn small" id="menub">☰ مراحل</div><div class="btn small" id="resb">↺ إعادة</div></div>
+  <div class="grp"><div class="btn" id="loopb">⟳ اصنع صدى</div><div class="btn" id="bj">▲</div></div></div>
+ </div>
+</div>
+
+<div class="ov show" id="menu">
+ <h1>صدى الزمن</h1>
+ <p>كل مرة تضغط «اصنع صدى» حركتك اللي عملتها بتتحوّل لـ<b>صدى</b> بيعيدها من أول وجديد، وانت بتبدأ من الأول ومعاك صداك. الأصداء بتدوس على الأزرار وتفتح الأبواب، وتقدر تطلع على راسها كسلم.</p>
+ <p>اوصل للبوابة الخضرا. الأشواك بتموّتك. أقصى 3 أصداء.</p>
+ <div id="grid"></div>
+ <button class="go" id="go">ابدأ</button>
+ <p style="font-size:12px;opacity:.7">كيبورد: الأسهم/WASD للحركة، فوق للنط، Q أو Enter لصنع صدى، R للإعادة</p>
+</div>
+
+<div class="ov" id="win">
+ <h1 id="wt">المرحلة خلصت!</h1>
+ <div style="font-size:44px;color:#ffd166;letter-spacing:8px" id="wstars">★★★</div>
+ <p id="wsub"></p>
+ <button class="go" id="next">المرحلة اللي بعدها</button>
+ <button class="go" id="again" style="border-color:#4b55c9;font-size:16px">العب تاني</button>
+</div>
+
+<script>
+(()=>{
+'use strict';
+const TS=32,COLS=20,ROWS=11,W=640,H=352,MAXE=3,MAXT=1200;
+const LEVELS=[
+{name:"أول خطوة",par:0,hint:"اجري للبوابة الخضرا وانط فوق الأشواك. السهم ▲ للنط.",map:[
+"####################",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#S......XX.......E.#",
+"####################"]},
+{name:"الباب الأحمر",par:1,hint:"الباب مقفول. قف على الزرار الأحمر واضغط «اصنع صدى»، الصدى هيفضل واقف عليه.",map:[
+"####################",
+"#...........#......#",
+"#...........#......#",
+"#...........#......#",
+"#...........#......#",
+"#...........A......#",
+"#...........A......#",
+"#...........A......#",
+"#...........A......#",
+"#S...a......A....E.#",
+"####################"]},
+{name:"جزيرة الأشواك",par:1,hint:"الزرار فوق جزيرة صغيرة وسط الأشواك. اطلع عليها وانت بتنط بحذر.",map:[
+"####################",
+"#...........#......#",
+"#...........#......#",
+"#...........#......#",
+"#...........#......#",
+"#...........A......#",
+"#...........A......#",
+"#...........A......#",
+"#...........A......#",
+"#S..XXaXX...A....E.#",
+"####################"]},
+{name:"السلم الحي",par:1,hint:"الحافة أعلى من نطتك. خلّي صداك يقف تحتها واطلع على راسه.",map:[
+"####################",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#................E.#",
+"#.............######",
+"#..................#",
+"#S................ #".replace(" ","."),
+"####################"]},
+{name:"بابين ورا بعض",par:2,hint:"أول صدى يفتح الباب الأول، تاني صدى يفتح التاني. فكّر بالترتيب.",map:[
+"####################",
+"#.......#.....#....#",
+"#.......#.....#....#",
+"#.......#.....#....#",
+"#.......#.....#....#",
+"#.......A.....B....#",
+"#.......A.....B....#",
+"#.......A.....B....#",
+"#.......A.....B....#",
+"#S..a...A..b..B..E.#",
+"####################"]},
+{name:"فتح وطلوع",par:2,hint:"الباب بيحجب سلم الحافة. صدى يفتح الباب، وصدى تاني يستنى تحت الحافة.",map:[
+"####################",
+"#.........#........#",
+"#.........#........#",
+"#.........#........#",
+"#.........#........#",
+"#.........A........#",
+"#.........A......E.#",
+"#.........A...######",
+"#.........A........#",
+"#S..a.....A........#",
+"####################"]},
+{name:"التلات أصداء",par:3,hint:"تلات أبواب، تلات أزرار. لازم كل الأصداء مرة واحدة. ركّز في التوقيت.",map:[
+"####################",
+"#....#....#....#...#",
+"#....#....#....#...#",
+"#....#....#....#...#",
+"#....#....#....#...#",
+"#....A....B....C...#",
+"#....A....B....C...#",
+"#....A....B....C...#",
+"#....A....B....C...#",
+"#S.a.A..b.B..c.C.E.#",
+"####################"]}
+];
+const COL={a:'#ff4d6d',b:'#ffd166',c:'#06d6a0'};
+const ECOL=['#c084fc','#ff9f43','#4dd0ff'];
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+let save={};try{save=JSON.parse(localStorage.getItem('echo_loop_v1')||'{}')}catch(e){}
+function persist(){try{localStorage.setItem('echo_loop_v1',JSON.stringify(save))}catch(e){}}
+// audio
+let ac=null;function snd(f,d,type,v,slide){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.type=type||'sine';o.frequency.value=f;if(slide)o.frequency.exponentialRampToValueAtTime(slide,ac.currentTime+d);g.gain.value=v||.08;g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
+// state
+let li=0,tiles,spawn,doors,plates,exitT,echoes,player,rec,t,msg='',msgT=0,won=false,flash=0,deaths=0,parts=[],shake=0,openAnim={a:0,b:0,c:0},playing=false;
+let keys={L:0,R:0,J:0};
+function parse(){const L=LEVELS[li];tiles=[];plates=[];doors=[];exitT=null;
+ for(let r=0;r<ROWS;r++){const row=[];for(let c=0;c<COLS;c++){const ch=L.map[r][c];
+  if(ch==='S'){spawn={x:c*TS+6,y:(r+1)*TS-28};row.push('.')}
+  else if(ch==='E'){exitT={c,r};row.push('.')}
+  else if('abc'.includes(ch)){plates.push({c,r,k:ch});row.push('.')}
+  else if('ABC'.includes(ch)){doors.push({c,r,k:ch.toLowerCase()});row.push(ch)}
+  else row.push(ch)}tiles.push(row)}}
+function mk(){return{x:spawn.x,y:spawn.y,w:20,h:28,vx:0,vy:0,g:false,co:0,pj:0,face:1,trail:[]}}
+function resetRun(){player=mk();echoes.forEach(e=>{e.e=mk()});rec=[];t=0}
+function loadLevel(i){li=i;parse();echoes=[];resetRun();won=false;deaths=0;parts=[];$('lvn').textContent=(li+1);$('hint').textContent=LEVELS[li].hint;updHud()}
+function updHud(){$('ecn').textContent=echoes.length+'/'+MAXE;$('tm').textContent=Math.max(0,Math.ceil((MAXT-t)/60))}
+function say(s){msg=s;msgT=120}
+// physics
+let pressed={a:0,b:0,c:0};
+function doorOpen(k){return pressed[k]}
+function solid(c,r,skip){if(c<0||c>=COLS||r<0||r>=ROWS)return true;const ch=tiles[r][c];if(ch==='#')return true;if('ABC'.includes(ch)){if(doorOpen(ch.toLowerCase()))return false;if(skip&&skip.has(c+','+r))return false;return true}return false}
+function overl(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+function step(e,inp,isPlayer){
+ const L=inp&1,R=inp&2,J=inp&4;
+ let skip=null;for(const d of doors){if(!doorOpen(d.k)){if(overl(e,{x:d.c*TS,y:d.r*TS,w:TS,h:TS})){(skip=skip||new Set()).add(d.c+','+d.r)}}}
+ e.vx=(R?3:0)-(L?3:0);if(e.vx)e.face=e.vx>0?1:-1;
+ const jp=J&&!e.pj;e.pj=J;
+ if(e.g)e.co=6;else if(e.co>0)e.co--;
+ if(jp&&e.co>0){e.vy=-9.6;e.co=0;e.g=false;if(isPlayer)snd(420,.12,'square',.04,760)}
+ if(!J&&e.vy<-3.5)e.vy=-3.5;
+ e.vy=Math.min(e.vy+.5,12);
+ // X
+ e.x+=e.vx;
+ let x0=Math.floor(e.x/TS),x1=Math.floor((e.x+e.w-.01)/TS),y0=Math.floor(e.y/TS),y1=Math.floor((e.y+e.h-.01)/TS);
+ for(let r=y0;r<=y1;r++)for(let c=x0;c<=x1;c++)if(solid(c,r,skip)){if(e.vx>0)e.x=c*TS-e.w;else if(e.vx<0)e.x=(c+1)*TS;x0=Math.floor(e.x/TS);x1=Math.floor((e.x+e.w-.01)/TS)}
+ // Y
+ const prevB=e.y+e.h;e.y+=e.vy;e.g=false;
+ x0=Math.floor(e.x/TS);x1=Math.floor((e.x+e.w-.01)/TS);y0=Math.floor(e.y/TS);y1=Math.floor((e.y+e.h-.01)/TS);
+ for(let r=y0;r<=y1;r++)for(let c=x0;c<=x1;c++)if(solid(c,r,skip)){if(e.vy>0){e.y=r*TS-e.h;e.g=true}else if(e.vy<0){e.y=(r+1)*TS}e.vy=0;y0=Math.floor(e.y/TS);y1=Math.floor((e.y+e.h-.01)/TS)}
+ if(isPlayer&&e.vy>=0){for(const ec of echoes){const o=ec.e;if(e.x+e.w>o.x+1&&e.x<o.x+o.w-1){const top=o.y;if(prevB<=top+6&&e.y+e.h>=top&&e.y+e.h<=top+14){e.y=top-e.h;e.vy=0;e.g=true}}}}
+ if(t%3===0){e.trail.push({x:e.x,y:e.y});if(e.trail.length>6)e.trail.shift()}
+}
+function plateRect(p){return{x:p.c*TS+2,y:p.r*TS+24,w:TS-4,h:8}}
+function calcPlates(){const n={a:0,b:0,c:0};const ents=[player,...echoes.map(e=>e.e)];for(const p of plates){const pr=plateRect(p);for(const e of ents)if(overl(e,pr))n[p.k]=1}
+ for(const k of 'abc'){if(n[k]&&!pressed[k]&&playing)snd(660,.12,'triangle',.06,880);if(!n[k]&&pressed[k]&&playing)snd(300,.12,'triangle',.05)}
+ pressed=n}
+function die(){snd(160,.35,'sawtooth',.08,50);flash=14;shake=10;deaths++;burst(player.x+10,player.y+14,'#ff4d6d',24);resetRun();say('اتحرقت! ابدأ تاني')}
+function burst(x,y,c,n){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=1+Math.random()*3;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:30+Math.random()*20,c})}}
+function makeEcho(){
+ if(rec.length<20){say('اتحرك الأول شوية');return}
+ if(echoes.length>=MAXE){say('وصلت لأقصى 3 أصداء. اضغط إعادة');snd(200,.15,'square',.05);return}
+ burst(player.x+10,player.y+14,ECOL[echoes.length],26);snd(300,.4,'sine',.1,900);
+ echoes.push({rec:rec.slice(),e:null});resetRun();flash=6;say('صدى '+echoes.length+' اتسجّل!');updHud()}
+function update(){
+ if(won)return;
+ calcPlates();
+ const inp=(keys.L?1:0)|(keys.R?2:0)|(keys.J?4:0);
+ rec.push(inp);
+ for(const ec of echoes){step(ec.e,t<ec.rec.length?ec.rec[t]:0,false)}
+ calcPlates();
+ step(player,inp,true);
+ t++;
+ // hazards
+ const pr={x:player.x,y:player.y,w:player.w,h:player.h};
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(tiles[r][c]==='X'&&overl(pr,{x:c*TS+6,y:r*TS+16,w:TS-12,h:TS-16})){die();return}
+ const ex={x:exitT.c*TS+4,y:exitT.r*TS-4,w:TS-8,h:TS+4};
+ if(overl(pr,ex))return finish();
+ if(t>=MAXT){say('انتهى الوقت: صدى تلقائي');makeEcho()}
+ updHud();
+}
+function finish(){won=true;snd(523,.15,'triangle',.1);setTimeout(()=>snd(659,.15,'triangle',.1),130);setTimeout(()=>snd(784,.3,'triangle',.1),260);
+ const par=LEVELS[li].par,n=echoes.length;const st=n<=par?3:(n<=par+1?2:1);
+ const old=save[li]||0;if(st>old)save[li]=st;persist();
+ $('wstars').textContent='★'.repeat(st)+'☆'.repeat(3-st);
+ $('wt').textContent=li===LEVELS.length-1?'خلّصت اللعبة! 🎉':'المرحلة خلصت!';
+ $('wsub').textContent='استخدمت '+n+' أصداء (المثالي '+par+')'+(deaths?' ومتّ '+deaths+' مرات':'');
+ $('next').style.display=li<LEVELS.length-1?'':'none';
+ $('win').classList.add('show')}
+// render
+const stars=[];for(let i=0;i<60;i++)stars.push({x:Math.random()*W,y:Math.random()*H,s:Math.random()*1.6+.3,p:Math.random()*6});
+function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
+function drawEnt(e,col,alpha,eyes){
+ cx.save();
+ if(e.trail){for(let i=0;i<e.trail.length;i++){cx.globalAlpha=alpha*.07*(i+1);cx.fillStyle=col;rr(e.trail[i].x,e.trail[i].y,e.w,e.h,6);cx.fill()}}
+ cx.globalAlpha=alpha;cx.shadowColor=col;cx.shadowBlur=14;cx.fillStyle=col;rr(e.x,e.y,e.w,e.h,6);cx.fill();cx.shadowBlur=0;
+ cx.globalAlpha=Math.min(1,alpha+.2);cx.fillStyle='#fff';const ex=e.x+(e.face>0?11:3);cx.fillRect(ex,e.y+8,4,6);cx.fillRect(ex+(e.face>0?-7:7),e.y+8,4,6);
+ cx.restore()}
+function draw(ts){
+ const T=ts/1000;
+ cx.save();
+ if(shake>0){cx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.85;if(shake<.5)shake=0}
+ const g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0e1038');g.addColorStop(1,'#070816');cx.fillStyle=g;cx.fillRect(-10,-10,W+20,H+20);
+ for(const s of stars){cx.globalAlpha=.4+.4*Math.sin(T*1.5+s.p);cx.fillStyle='#9aa8ff';cx.fillRect(s.x,s.y,s.s,s.s)}cx.globalAlpha=1;
+ cx.strokeStyle='rgba(90,100,255,.07)';cx.lineWidth=1;for(let i=0;i<=COLS;i++){cx.beginPath();cx.moveTo(i*TS,0);cx.lineTo(i*TS,H);cx.stroke()}for(let i=0;i<=ROWS;i++){cx.beginPath();cx.moveTo(0,i*TS);cx.lineTo(W,i*TS);cx.stroke()}
+ // tiles
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const ch=tiles[r][c],x=c*TS,y=r*TS;
+  if(ch==='#'){cx.fillStyle='#1b1f56';cx.fillRect(x,y,TS,TS);cx.fillStyle='#2c3290';cx.fillRect(x,y,TS,3);cx.fillStyle='rgba(255,255,255,.05)';cx.fillRect(x+2,y+6,TS-4,2);cx.strokeStyle='#0b0d30';cx.strokeRect(x+.5,y+.5,TS-1,TS-1)}
+  else if(ch==='X'){cx.fillStyle='#ff4d6d';cx.shadowColor='#ff4d6d';cx.shadowBlur=8;for(let k=0;k<2;k++){cx.beginPath();cx.moveTo(x+k*16+1,y+TS);cx.lineTo(x+k*16+8,y+14);cx.lineTo(x+k*16+15,y+TS);cx.fill()}cx.shadowBlur=0}
+  else if('ABC'.includes(ch)){const k=ch.toLowerCase(),o=pressed[k];const col=COL[k];
+   if(o){cx.strokeStyle=col;cx.globalAlpha=.5;cx.setLineDash([4,4]);cx.strokeRect(x+4,y,TS-8,TS);cx.setLineDash([]);cx.globalAlpha=1}
+   else{cx.fillStyle=col;cx.globalAlpha=.85;cx.shadowColor=col;cx.shadowBlur=10;cx.fillRect(x+6,y,TS-12,TS);cx.shadowBlur=0;cx.globalAlpha=.4;cx.fillStyle='#000';for(let k2=0;k2<TS;k2+=8)cx.fillRect(x+6,y+k2,TS-12,2);cx.globalAlpha=1}}}
+ // plates
+ for(const p of plates){const col=COL[p.k],pr=pressed[p.k];cx.fillStyle=col;cx.shadowColor=col;cx.shadowBlur=pr?18:6;cx.fillRect(p.c*TS+3,p.r*TS+(pr?28:24),TS-6,pr?4:8);cx.shadowBlur=0;cx.fillStyle='#1b1f56';cx.fillRect(p.c*TS,p.r*TS+30,TS,2)}
+ // exit
+ {const x=exitT.c*TS,y=exitT.r*TS;const pu=1+.1*Math.sin(T*4);cx.save();cx.translate(x+16,y+16);cx.shadowColor='#4cff9a';cx.shadowBlur=22;cx.strokeStyle='#4cff9a';cx.lineWidth=3;cx.beginPath();cx.ellipse(0,0,12*pu,18*pu,0,0,6.28);cx.stroke();cx.rotate(T*2);cx.strokeStyle='rgba(76,255,154,.5)';cx.beginPath();cx.ellipse(0,0,8,14,0,0,6.28);cx.stroke();cx.restore();cx.shadowBlur=0}
+ // echoes
+ echoes.forEach((ec,i)=>drawEnt(ec.e,ECOL[i],.6,true));
+ // player
+ drawEnt(player,'#7df9ff',1,true);
+ // particles
+ parts=parts.filter(p=>p.l>0);for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vy+=.1;p.l--;cx.globalAlpha=p.l/50;cx.fillStyle=p.c;cx.fillRect(p.x,p.y,3,3)}cx.globalAlpha=1;
+ // timer bar
+ cx.fillStyle='rgba(255,255,255,.08)';cx.fillRect(0,H-5,W,5);cx.fillStyle=t>MAXT*.8?'#ff4d6d':'#7df9ff';cx.fillRect(0,H-5,W*(1-t/MAXT),5);
+ if(msgT>0){msgT--;cx.globalAlpha=Math.min(1,msgT/30);cx.fillStyle='#fff';cx.font='bold 20px system-ui,Arial';cx.textAlign='center';cx.shadowColor='#000';cx.shadowBlur=6;cx.fillText(msg,W/2,40);cx.shadowBlur=0;cx.globalAlpha=1}
+ if(flash>0){cx.fillStyle='rgba(255,255,255,'+(flash/30)+')';cx.fillRect(0,0,W,H);flash--}
+ cx.restore()}
+// loop
+let acc=0,last=0;
+function frame(ts){if(!last)last=ts;acc+=Math.min(50,ts-last);last=ts;
+ while(acc>=1000/60){acc-=1000/60;if(playing)update()}
+ draw(ts);requestAnimationFrame(frame)}
+// input
+function setKey(k,v){keys[k]=v?1:0;const m={L:'bl',R:'br',J:'bj'}[k];$(m).classList.toggle('on',!!v)}
+[['bl','L'],['br','R'],['bj','J']].forEach(([id,k])=>{const el=$(id);
+ el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture&&el.setPointerCapture(e.pointerId);setKey(k,1)});
+ const up=e=>{e.preventDefault();setKey(k,0)};el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('lostpointercapture',up)});
+$('loopb').addEventListener('pointerdown',e=>{e.preventDefault();if(playing)makeEcho()});
+function reset(){echoes=[];resetRun();deaths=0;updHud();say('إعادة المرحلة')}
+$('resb').addEventListener('pointerdown',e=>{e.preventDefault();if(playing)reset()});
+$('menub').addEventListener('pointerdown',e=>{e.preventDefault();openMenu()});
+const kmap={ArrowLeft:'L',a:'L',A:'L',ArrowRight:'R',d:'R',D:'R',ArrowUp:'J',w:'J',W:'J',' ':'J'};
+addEventListener('keydown',e=>{if(kmap[e.key]){setKey(kmap[e.key],1);e.preventDefault()}else if((e.key==='q'||e.key==='Q'||e.key==='Enter')&&playing){makeEcho()}else if((e.key==='r'||e.key==='R')&&playing)reset()});
+addEventListener('keyup',e=>{if(kmap[e.key])setKey(kmap[e.key],0)});
+addEventListener('blur',()=>{setKey('L',0);setKey('R',0);setKey('J',0)});
+// menu
+let sel=0;
+function openMenu(){playing=false;const gr=$('grid');gr.innerHTML='';
+ LEVELS.forEach((L,i)=>{const d=document.createElement('div');d.className='lv';const s=save[i]||0;d.innerHTML=(i+1)+'<small>'+(s?'★'.repeat(s)+'☆'.repeat(3-s):'☆☆☆')+'</small>';d.style.borderColor=i===sel?'#7df9ff':'';d.addEventListener('pointerdown',e=>{e.preventDefault();sel=i;openMenu()});gr.appendChild(d)});
+ $('go').textContent='ابدأ المرحلة '+(sel+1)+': '+LEVELS[sel].name;$('menu').classList.add('show');$('win').classList.remove('show')}
+function start(i){sel=i;$('menu').classList.remove('show');$('win').classList.remove('show');loadLevel(i);playing=true;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume()}catch(e){}}
+$('go').addEventListener('pointerdown',e=>{e.preventDefault();start(sel)});
+$('next').addEventListener('pointerdown',e=>{e.preventDefault();start(li+1)});
+$('again').addEventListener('pointerdown',e=>{e.preventDefault();start(li)});
+// first level: unlocked all; pick first unfinished
+sel=0;for(let i=0;i<LEVELS.length;i++){if(!save[i]){sel=i;break}if(i===LEVELS.length-1)sel=i}
+loadLevel(0);openMenu();requestAnimationFrame(frame);
+window.__echo={tick(n,m){for(let i=0;i<n;i++){setKey('L',m.includes('L'));setKey('R',m.includes('R'));setKey('J',m.includes('J'));update()}setKey('L',0);setKey('R',0);setKey('J',0)},start,get state(){return{li,t,echoes:echoes.length,won,px:player.x,py:player.y,pressed,deaths}},keys,setKey,makeEcho};
+})();
+</script>
+</body>
+</html>
