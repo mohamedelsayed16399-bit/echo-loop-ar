@@ -68,6 +68,7 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
  <div style="font-size:44px;color:#ffd166;letter-spacing:8px" id="wstars">★★★</div>
  <p id="wsub"></p>
  <button class="go" id="next">المرحلة اللي بعدها</button>
+ <button class="go" id="share" style="border-color:#ffd166;font-size:16px">🖼️ شارك النتيجة كصورة</button>
  <button class="go" id="again" style="border-color:#4b55c9;font-size:16px">العب تاني</button>
 </div>
 
@@ -474,6 +475,21 @@ function start(i){sel=i;$('menu').classList.remove('show');$('win').classList.re
 $('go').addEventListener('pointerdown',e=>{e.preventDefault();start(sel)});
 $('daily').addEventListener('pointerdown',e=>{e.preventDefault();const k=dayKey();LEVELS[NMAIN]=genLevel(k,k%3);start(NMAIN)});
 $('next').addEventListener('pointerdown',e=>{e.preventDefault();start(li+1)});
+
+function shareCard(){
+ const c=document.createElement('canvas');c.width=1080;c.height=1080;const x=c.getContext('2d');
+ const g=x.createLinearGradient(0,0,0,1080);g.addColorStop(0,'#14185a');g.addColorStop(1,'#070816');x.fillStyle=g;x.fillRect(0,0,1080,1080);
+ x.textAlign='center';x.direction='rtl';x.fillStyle='#7df9ff';x.shadowColor='#7df9ff';x.shadowBlur=30;x.font='bold 110px system-ui,Arial';x.fillText('صدى الزمن',540,200);x.shadowBlur=0;
+ const L=LEVELS[li],st=save[li]||0;x.fillStyle='#e8ecff';x.font='bold 64px system-ui,Arial';x.fillText(L.daily?'تحدي اليوم':('المرحلة '+(li+1)+': '+L.name),540,360);
+ x.fillStyle='#ffd166';x.font='bold 170px system-ui,Arial';x.fillText('★'.repeat(st)+'☆'.repeat(3-st),540,570);
+ x.fillStyle='#c7cdf5';x.font='52px system-ui,Arial';x.fillText('الأصداء: '+echoes.length+'  |  الوقت: '+(t/60).toFixed(1)+' ث',540,700);
+ const gc=gems.filter(q=>q.got).length;if(gems.length)x.fillText('جواهر: '+gc+'/'+gems.length,540,780);
+ let ts=0;for(let i=0;i<NMAIN;i++)ts+=save[i]||0;x.fillStyle='#b7c0ff';x.font='46px system-ui,Arial';x.fillText('مجموع النجوم: '+ts+'/'+(NMAIN*3),540,880);
+ x.fillStyle='#7df9ff';x.font='40px system-ui,Arial';x.fillText('mohamedelsayed16399-bit.github.io/echo-loop-ar',540,1010);
+ c.toBlob(async b=>{const f=new File([b],'echo-loop.png',{type:'image/png'});try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'صدى الزمن'});return}}catch(e){}
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='echo-loop.png';document.body.appendChild(a);a.click();a.remove()},'image/png');
+ return c}
+$('share').addEventListener('pointerdown',e=>{e.preventDefault();shareCard()});
 $('again').addEventListener('pointerdown',e=>{e.preventDefault();start(li)});
 
 // music
@@ -487,7 +503,7 @@ musLabel();
 // first level: unlocked all; pick first unfinished
 sel=0;for(let i=0;i<LEVELS.length;i++){if(!save[i]){sel=i;break}if(i===LEVELS.length-1)sel=i}
 loadLevel(0);openMenu();requestAnimationFrame(frame);
-window.__echo={hold(){playing=false},tick(n,m){for(let i=0;i<n;i++){setKey('L',m.includes('L'));setKey('R',m.includes('R'));setKey('J',m.includes('J'));update()}setKey('L',0);setKey('R',0);setKey('J',0)},daily(lv){LEVELS[NMAIN]=lv;start(NMAIN);playing=false},start,genLevel,NMAIN,get state(){return{gems:gems.filter(g=>g.got).length,li,t,echoes:echoes.length,won,px:player.x,py:player.y,pressed,deaths}},keys,setKey,makeEcho};
+window.__echo={hold(){playing=false},tick(n,m){for(let i=0;i<n;i++){setKey('L',m.includes('L'));setKey('R',m.includes('R'));setKey('J',m.includes('J'));update()}setKey('L',0);setKey('R',0);setKey('J',0)},daily(lv){LEVELS[NMAIN]=lv;start(NMAIN);playing=false},start,shareCard,genLevel,NMAIN,get state(){return{gems:gems.filter(g=>g.got).length,li,t,echoes:echoes.length,won,px:player.x,py:player.y,pressed,deaths}},keys,setKey,makeEcho};
 })();
 </script>
 </body>
