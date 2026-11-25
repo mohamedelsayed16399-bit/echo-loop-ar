@@ -217,6 +217,18 @@ const LEVELS=[
 "#.........A........#",
 "#S..a.....A..^.....#",
 "####################"]}
+,{name:"المنصة المتحركة",par:0,plats:[{x0:160,x1:384,y:288,w:64,per:240}],hint:"الأرضية كلها أشواك. اركب المنصة اللي رايحة جاية وانط عند الطرف التاني.",map:[
+"####################",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#..................#",
+"#S....XXXXXXXX...E.#",
+"####################"]}
 ];
 const COL={a:'#ff4d6d',b:'#ffd166',c:'#06d6a0'};
 const ECOL=['#c084fc','#ff9f43','#4dd0ff'];
@@ -249,6 +261,7 @@ function overl(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
 function step(e,inp,isPlayer){
  const L=inp&1,R=inp&2,J=inp&4;
  let skip=null;for(const d of doors){if(!doorOpen(d.k)){if(overl(e,{x:d.c*TS,y:d.r*TS,w:TS,h:TS})){(skip=skip||new Set()).add(d.c+','+d.r)}}}
+ if(e.on&&t>0){e.x+=platX(e.on,t)-platX(e.on,t-1)}e.on=null;
  e.vx=(R?3:0)-(L?3:0);if(e.vx)e.face=e.vx>0?1:-1;
  const jp=J&&!e.pj;e.pj=J;
  if(e.g)e.co=6;else if(e.co>0)e.co--;
@@ -265,9 +278,11 @@ function step(e,inp,isPlayer){
  const prevB=e.y+e.h;e.y+=e.vy;e.g=false;
  x0=Math.floor(e.x/TS);x1=Math.floor((e.x+e.w-.01)/TS);y0=Math.floor(e.y/TS);y1=Math.floor((e.y+e.h-.01)/TS);
  for(let r=y0;r<=y1;r++)for(let c=x0;c<=x1;c++)if(solid(c,r,skip)){if(e.vy>0){e.y=r*TS-e.h;e.g=true}else if(e.vy<0){e.y=(r+1)*TS}e.vy=0;y0=Math.floor(e.y/TS);y1=Math.floor((e.y+e.h-.01)/TS)}
+ if(e.vy>=0&&LEVELS[li].plats){for(const p of LEVELS[li].plats){const px=platX(p,t);if(e.x+e.w>px&&e.x<px+p.w&&prevB<=p.y+8&&e.y+e.h>=p.y&&e.y+e.h<=p.y+16){e.y=p.y-e.h;e.vy=0;e.g=true;e.on=p}}}
  if(isPlayer&&e.vy>=0){for(const ec of echoes){const o=ec.e;if(e.x+e.w>o.x+1&&e.x<o.x+o.w-1){const top=o.y;if(prevB<=top+6&&e.y+e.h>=top&&e.y+e.h<=top+14){e.y=top-e.h;e.vy=0;e.g=true}}}}
  if(t%3===0){e.trail.push({x:e.x,y:e.y});if(e.trail.length>6)e.trail.shift()}
 }
+function platX(p,tt){const ph=(tt%p.per)/p.per;return p.x0+(p.x1-p.x0)*(0.5-0.5*Math.cos(ph*6.2832))}
 function plateRect(p){return{x:p.c*TS+2,y:p.r*TS+24,w:TS-4,h:8}}
 function calcPlates(){const n={a:0,b:0,c:0};const ents=[player,...echoes.map(e=>e.e)];for(const p of plates){const pr=plateRect(p);for(const e of ents)if(overl(e,pr))n[p.k]=1}
  for(const k of 'abc'){if(n[k]&&!pressed[k]&&playing)snd(660,.12,'triangle',.06,880);if(!n[k]&&pressed[k]&&playing)snd(300,.12,'triangle',.05)}
@@ -334,6 +349,7 @@ function draw(ts){
  for(const p of plates){const col=COL[p.k],pr=pressed[p.k];cx.fillStyle=col;cx.shadowColor=col;cx.shadowBlur=pr?18:6;cx.fillRect(p.c*TS+3,p.r*TS+(pr?28:24),TS-6,pr?4:8);cx.shadowBlur=0;cx.fillStyle='#1b1f56';cx.fillRect(p.c*TS,p.r*TS+30,TS,2)}
  // exit
  {const x=exitT.c*TS,y=exitT.r*TS;const pu=1+.1*Math.sin(T*4);cx.save();cx.translate(x+16,y+16);cx.shadowColor='#4cff9a';cx.shadowBlur=22;cx.strokeStyle='#4cff9a';cx.lineWidth=3;cx.beginPath();cx.ellipse(0,0,12*pu,18*pu,0,0,6.28);cx.stroke();cx.rotate(T*2);cx.strokeStyle='rgba(76,255,154,.5)';cx.beginPath();cx.ellipse(0,0,8,14,0,0,6.28);cx.stroke();cx.restore();cx.shadowBlur=0}
+ {const T2=T;for(const p of (LEVELS[li].plats||[])){const px=platX(p,t);cx.fillStyle='#4dd0ff';cx.shadowColor='#4dd0ff';cx.shadowBlur=12;rr(px,p.y,p.w,10,4);cx.fill();cx.shadowBlur=0;cx.fillStyle='rgba(255,255,255,.5)';cx.fillRect(px+6,p.y+2,p.w-12,2)}}
  // echoes
  echoes.forEach((ec,i)=>drawEnt(ec.e,ECOL[i],.6,true));
  // player
