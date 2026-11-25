@@ -37,6 +37,14 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
 .lv small{display:block;font-size:13px;color:#ffd166;margin-top:2px;letter-spacing:2px}
 .lv.lock{opacity:.35}
 .go{margin-top:6px;padding:14px 34px;border-radius:16px;border:2px solid #7df9ff;background:rgba(125,249,255,.18);color:#fff;font-size:20px;font-weight:700}
+.ed{align-items:center}
+#edcv{width:100%;max-width:640px;aspect-ratio:640/352;border:2px solid #4b55c9;border-radius:8px;background:#0b0d24}
+#pal{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:640px}
+#pal .pb{min-width:46px;height:44px;border:2px solid #4b55c9;border-radius:10px;background:rgba(75,85,201,.2);color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 8px}
+#pal .pb.sel{border-color:#7df9ff;background:rgba(125,249,255,.3)}
+#edcode{width:100%;max-width:640px;height:64px;background:#0b0d24;color:#c7cdf5;border:1px solid #4b55c9;border-radius:8px;font-size:11px;direction:ltr;user-select:text;-webkit-user-select:text;touch-action:auto}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.row .go{margin:0;padding:10px 16px;font-size:15px}
 </style>
 </head>
 <body>
@@ -59,6 +67,7 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
  <div id="grid"></div>
  <button class="go" id="go">ابدأ</button>
  <button class="go" id="daily" style="border-color:#ffd166;font-size:16px;padding:10px 24px">🎯 تحدي اليوم</button>
+ <button class="go" id="edopen" style="border-color:#c084fc;font-size:16px;padding:10px 24px">🛠️ محرر المراحل</button>
  <button class="go" id="skin" style="border-color:#ffd166;font-size:15px;padding:10px 24px"></button>
  <button class="go" id="mus" style="border-color:#4b55c9;font-size:15px;padding:10px 24px">🎵 الموسيقى: مقفولة</button>
  <p style="font-size:12px;opacity:.7">كيبورد: الأسهم/WASD للحركة، فوق للنط، Q أو Enter لصنع صدى، U للتراجع عن آخر صدى، R للإعادة</p>
@@ -71,6 +80,15 @@ html,body{margin:0;height:100%;background:#070816;color:#e8ecff;font-family:syst
  <p>3) الصدى بيقف على الزرار ويفتح الباب، أو تطلع على راسه كسلم.</p>
  <p>4) السيور بتشدّك: اتنطط قبل الحافة. 💎 الجواهر بتفتح ألوان جديدة.</p>
  <button class="go" id="tutok">فهمت، يلا</button>
+</div>
+<div class="ov ed" id="ed">
+ <h1 style="font-size:26px">🛠️ محرر المراحل</h1>
+ <p style="font-size:13px">اختار قطعة واضغط على الشبكة. لازم بداية (S) وبوابة (E). جرّب مرحلتك، وانسخ الكود وابعته لصحابك.</p>
+ <canvas id="edcv" width="640" height="352"></canvas>
+ <div id="pal"></div>
+ <div class="row"><button class="go" id="edplay">▶ جرّب</button><button class="go" id="edcopy" style="border-color:#ffd166">📋 انسخ الكود</button><button class="go" id="edload" style="border-color:#c084fc">📥 حمّل الكود</button><button class="go" id="edclr" style="border-color:#ff4d6d">🗑 امسح</button><button class="go" id="edback" style="border-color:#4b55c9">رجوع</button></div>
+ <textarea id="edcode" placeholder="الكود هيظهر هنا. الصق كود صاحبك واضغط حمّل الكود"></textarea>
+ <div id="edmsg" style="font-size:13px;color:#ffd166;min-height:18px"></div>
 </div>
 <div class="ov" id="win">
  <h1 id="wt">المرحلة خلصت!</h1>
@@ -386,7 +404,7 @@ function parse(){const L=LEVELS[li];tiles=[];plates=[];gems=[];doors=[];exitT=nu
   else row.push(ch)}tiles.push(row)}}
 function mk(){return{x:spawn.x,y:spawn.y,w:20,h:28,vx:0,vy:0,g:false,co:0,pj:0,face:1,trail:[]}}
 function resetRun(){player=mk();echoes.forEach(e=>{e.e=mk()});rec=[];t=0}
-function loadLevel(i){li=i;parse();echoes=[];resetRun();won=false;deaths=0;parts=[];$('lvn').textContent=LEVELS[li].daily?'اليوم':(li+1);$('hint').textContent=LEVELS[li].hint;updHud()}
+function loadLevel(i){li=i;parse();echoes=[];resetRun();won=false;deaths=0;parts=[];$('lvn').textContent=LEVELS[li].custom?'مخصصة':LEVELS[li].daily?'اليوم':(li+1);$('hint').textContent=LEVELS[li].hint;updHud()}
 function updHud(){$('ecn').textContent=echoes.length+'/'+MAXE;$('tm').textContent=Math.max(0,Math.ceil((MAXT-t)/60))}
 function say(s){msg=s;msgT=120}
 // physics
@@ -569,7 +587,38 @@ musLabel();
 // first level: unlocked all; pick first unfinished
 sel=0;for(let i=0;i<LEVELS.length;i++){if(!save[i]){sel=i;break}if(i===LEVELS.length-1)sel=i}
 loadLevel(0);openMenu();requestAnimationFrame(frame);
-window.__echo={hold(){playing=false},tick(n,m){for(let i=0;i<n;i++){setKey('L',m.includes('L'));setKey('R',m.includes('R'));setKey('J',m.includes('J'));update()}setKey('L',0);setKey('R',0);setKey('J',0)},daily(lv){LEVELS[NMAIN]=lv;start(NMAIN);playing=false},start,shareCard,genLevel,NMAIN,get state(){return{gems:gems.filter(g=>g.got).length,li,t,echoes:echoes.length,won,px:player.x,py:player.y,pressed,deaths}},keys,setKey,makeEcho};
+
+// level editor + share codes
+const EDP=[['.','ممحاة'],['#','▦'],['X','أشواك'],['S','بداية'],['E','بوابة'],['a','زر1'],['A','باب1'],['c','زر ليزر'],['Z','ليزر'],['^','نطاط'],['G','💎'],['>','سير ▶'],['<','◀ سير'],['b','زر2'],['B','باب2'],['Y','ليزر نبض'],['W','نبض2']];
+const EDC={'#':'#2c3290','X':'#ff4d6d','S':'#7df9ff','E':'#06d6a0','a':'#ff4d6d','A':'#ff4d6d','c':'#06d6a0','Z':'#06d6a0','^':'#ffd166','G':'#ffd166','>':'#ff9f43','<':'#ff9f43','b':'#ffd166','B':'#ffd166','Y':'#c084fc','W':'#c084fc'};
+let edg=null,edsel='#',edDown=false;
+function edBlank(){const g=[];for(let r=0;r<ROWS;r++){const row=[];for(let c=0;c<COLS;c++)row.push((r===0||r===ROWS-1||c===0||c===COLS-1)?'#':'.');g.push(row)}g[9][1]='S';g[9][18]='E';return g}
+function edEncode(g){let o='',prev='',n=0;for(let r=1;r<ROWS;r++)for(let c=1;c<COLS-1;c++){const ch=g[r][c];if(ch===prev)n++;else{if(prev)o+=(n>1?n:'')+prev;prev=ch;n=1}}o+=(n>1?n:'')+prev;return 'EC1-'+btoa(o).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function edDecode(code){code=(code||'').trim();const m=code.match(/EC1-([A-Za-z0-9_-]+)/);if(!m)return null;let raw;try{raw=atob(m[1].replace(/-/g,'+').replace(/_/g,'/'))}catch(e){return null}
+ const flat=[];const re=/(\d*)(.)/g;let x;while((x=re.exec(raw))){const k=x[1]?parseInt(x[1],10):1;if(k>400)return null;for(let i=0;i<k;i++)flat.push(x[2])}
+ if(flat.length!==10*(COLS-2))return null;const g=edBlank();let i=0;for(let r=1;r<ROWS;r++)for(let c=1;c<COLS-1;c++){const ch=flat[i++];if(!'.#XSEaAcZ^G><bBYW'.includes(ch))return null;g[r][c]=ch}
+ g[9][1]==='S'||0;return g}
+function edCheck(g){let S=0,E=0;for(const row of g)for(const ch of row){if(ch==='S')S++;if(ch==='E')E++}if(S!==1)return 'لازم بداية واحدة (S)';if(E!==1)return 'لازم بوابة واحدة (E)';return ''}
+function edDraw(){const x=$('edcv').getContext('2d');x.clearRect(0,0,W,H);x.fillStyle='#0b0d24';x.fillRect(0,0,W,H);x.font='bold 18px system-ui';x.textAlign='center';x.textBaseline='middle';
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const ch=edg[r][c];x.strokeStyle='rgba(90,100,255,.25)';x.strokeRect(c*TS+.5,r*TS+.5,TS-1,TS-1);if(ch!=='.'){x.fillStyle=EDC[ch]||'#fff';if(ch==='#'||ch==='>'||ch==='<')x.fillRect(c*TS+1,r*TS+1,TS-2,TS-2);else{x.globalAlpha=.35;x.fillRect(c*TS+3,r*TS+3,TS-6,TS-6);x.globalAlpha=1}
+  if(ch!=='#'){x.fillStyle='#fff';x.fillText(ch==='G'?'💎':ch,c*TS+16,r*TS+17)}}}}
+function edPal(){const p=$('pal');p.innerHTML='';for(const [ch,lb] of EDP){const b=document.createElement('div');b.className='pb'+(ch===edsel?' sel':'');b.textContent=lb;b.addEventListener('pointerdown',e=>{e.preventDefault();edsel=ch;edPal()});p.appendChild(b)}}
+function edPlace(ev){const cv=$('edcv'),b=cv.getBoundingClientRect(),c=Math.floor((ev.clientX-b.left)/b.width*COLS),r=Math.floor((ev.clientY-b.top)/b.height*ROWS);if(c<1||c>COLS-2||r<1||r>ROWS-1)return;
+ if(edsel==='S'||edsel==='E'){for(const row of edg)for(let i=0;i<COLS;i++)if(row[i]===edsel)row[i]='.'}
+ edg[r][c]=edsel;edDraw();save.ed=edEncode(edg);persist()}
+function edOpen(g){edg=g||edg||(save.ed&&edDecode(save.ed))||edBlank();$('menu').classList.remove('show');$('ed').classList.add('show');edPal();edDraw();$('edcode').value=edEncode(edg);$('edmsg').textContent=''}
+function playCustom(g,back){const m=g.map(r=>r.join(''));LEVELS[NMAIN]={name:'مرحلة مخصصة',par:2,hint:'مرحلة من تصميمك أو من صاحبك. كود المرحلة: '+edEncode(g).slice(0,18)+'…',custom:1,map:m};$('ed').classList.remove('show');start(NMAIN)}
+$('edopen').addEventListener('pointerdown',e=>{e.preventDefault();edOpen()});
+$('edcv').addEventListener('pointerdown',e=>{e.preventDefault();edDown=true;edPlace(e)});
+$('edcv').addEventListener('pointermove',e=>{if(edDown)edPlace(e)});
+window.addEventListener('pointerup',()=>{edDown=false});
+$('edplay').addEventListener('pointerdown',e=>{e.preventDefault();const m=edCheck(edg);if(m){$('edmsg').textContent=m;return}playCustom(edg)});
+$('edclr').addEventListener('pointerdown',e=>{e.preventDefault();edg=edBlank();edDraw();$('edcode').value=edEncode(edg);save.ed=edEncode(edg);persist()});
+$('edback').addEventListener('pointerdown',e=>{e.preventDefault();$('ed').classList.remove('show');openMenu()});
+$('edcopy').addEventListener('pointerdown',e=>{e.preventDefault();const code=edEncode(edg),url=location.origin+location.pathname+'#'+code;$('edcode').value=url;const done=()=>{$('edmsg').textContent='اتنسخ! ابعت اللينك لصاحبك، هيفتح المرحلة على طول.'};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(done,()=>{$('edcode').select();$('edmsg').textContent='انسخ من الخانة اللي تحت'})}else{$('edcode').select();$('edmsg').textContent='انسخ من الخانة اللي تحت'}});
+$('edload').addEventListener('pointerdown',e=>{e.preventDefault();const g=edDecode($('edcode').value);if(!g){$('edmsg').textContent='الكود مش صح';return}edg=g;edDraw();save.ed=edEncode(g);persist();$('edmsg').textContent='اتحمّلت المرحلة. اضغط جرّب.'});
+if(/EC1-/.test(location.hash)){const g=edDecode(decodeURIComponent(location.hash));if(g&&!edCheck(g)){edg=g;setTimeout(()=>{save.tut=1;playCustom(g)},50)}}
+window.__echo={hold(){playing=false},edEncode,edDecode,edBlank,edCheck,playCustom,edSet(g){edg=g},tick(n,m){for(let i=0;i<n;i++){setKey('L',m.includes('L'));setKey('R',m.includes('R'));setKey('J',m.includes('J'));update()}setKey('L',0);setKey('R',0);setKey('J',0)},daily(lv){LEVELS[NMAIN]=lv;start(NMAIN);playing=false},start,shareCard,genLevel,NMAIN,get state(){return{gems:gems.filter(g=>g.got).length,li,t,echoes:echoes.length,won,px:player.x,py:player.y,pressed,deaths}},keys,setKey,makeEcho};
 })();
 </script>
 </body>
